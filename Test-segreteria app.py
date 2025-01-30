@@ -1,22 +1,34 @@
 from flask import Flask, request
-from twilio.twiml.messaging_response import MessagingResponse
+import requests
+import os
 
 app = Flask(__name__)
 
-@app.route("/webhook", methods=['POST'])
+TWILIO_SID = os.getenv("TWILIO_SID")
+TWILIO_AUTH = os.getenv("TWILIO_AUTH_TOKEN")
+WHATSAPP_API_URL = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_SID}/Messages.json"
+TWILIO_WHATSAPP_NUMBER = "whatsapp:+14155238886"  
+
+def send_message(to, text):
+    data = {"From": TWILIO_WHATSAPP_NUMBER, "To": to, "Body": text}
+    auth = (TWILIO_SID, TWILIO_AUTH)
+    requests.post(WHATSAPP_API_URL, data=data, auth=auth)
+
+@app.route("/webhook", methods=["POST"])
 def webhook():
-    incoming_msg = request.values.get('Body', '').lower()
-    resp = MessagingResponse()
-    msg = resp.message()
+    data = request.form
+    msg = data.get("Body", "").lower()
+    sender = data.get("From")
 
-    if "ciao" in incoming_msg:
-        msg.body("Ciao! Come posso aiutarti oggi?")
-    elif "info" in incoming_msg:
-        msg.body("Sono un bot WhatsApp! Posso rispondere a domande specifiche.")
+    if "ciao" in msg:
+        response_text = "Ciao! Come posso aiutarti?"
+    elif "prezzo" in msg:
+        response_text = "I nostri prezzi variano in base al servizio. Quale ti interessa?"
     else:
-        msg.body("Mi dispiace, non ho capito. Prova a scrivere 'info' per più dettagli!")
+        response_text = "Non ho capito la tua richiesta. Puoi ripetere?"
 
-    return str(resp)
+    send_message(sender, response_text)
+    return "OK", 200
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)

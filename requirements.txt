@@ -2,3 +2,7 @@ flask
 requests
 gunicorn
 openai>=1.0.0
+openai
+twilio
+flask
+

@@ -1,47 +1,38 @@
-import os
 import openai
+import os
 from flask import Flask, request
-from twilio.rest import Client
+from twilio.twiml.messaging_response import MessagingResponse
+
+# Imposta la chiave API di OpenAI
+openai.api_key = os.getenv("OPENAI_API_KEY")  # Oppure sostituiscila con la tua chiave
 
 app = Flask(__name__)
 
-# Carica le API Key di OpenAI e Twilio dalle variabili d'ambiente
-openai.api_key = os.getenv("OPENAI_API_KEY")
-TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-
-# Crea il client Twilio
-client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    # Messaggio ricevuto su WhatsApp
-    incoming_msg = request.values.get('Body', '').strip()
-    from_number = request.values.get('From')
-
-    if not incoming_msg:
-        return "No message received", 400
-
-    # Chiamata all'API di OpenAI per generare una risposta
-    response = openai.ChatCompletion.create(
-        model="gpt-4",  # Usa il modello GPT-4 (o un altro modello)
-        messages=[{"role": "user", "content": incoming_msg}]
-    )
+    """Gestisce i messaggi in arrivo da Twilio."""
+    incoming_msg = request.values.get("Body", "").strip()
     
-    # Estrai la risposta di OpenAI
-    reply = response["choices"][0]["message"]["content"].strip()
+    if not incoming_msg:
+        return str(MessagingResponse().message("Non ho ricevuto nessun messaggio."))
 
-    # Invia la risposta al mittente tramite WhatsApp con Twilio
-    client.messages.create(
-        body=reply,  # Risposta generata da OpenAI
-        from_=f'whatsapp:{TWILIO_PHONE_NUMBER}',  # Il numero Twilio WhatsApp
-        to=f'whatsapp:{from_number}'  # Numero che ha inviato il messaggio
-    )
+    try:
+        # Richiesta a ChatGPT
+        response = openai.chat.completions.create(
+            model="gpt-4",  # Puoi usare "gpt-3.5-turbo" se vuoi
+            messages=[{"role": "user", "content": incoming_msg}]
+        )
+        
+        # Estrai la risposta di ChatGPT
+        reply = response.choices[0].message.content.strip()
+    
+    except Exception as e:
+        reply = f"Errore nel generare la risposta: {str(e)}"
 
-    return "Message sent", 200
+    # Crea la risposta Twilio
+    twilio_resp = MessagingResponse()
+    twilio_resp.message(reply)
+    return str(twilio_resp)
 
 if __name__ == "__main__":
-    app.run(debug=True)
-pip install --upgrade openai
-openai migrate
+    app.run(debug=True, port=5000)

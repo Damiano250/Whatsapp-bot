@@ -2,3 +2,5 @@ flask
 requests
 gunicorn
 openai>=1.0.0
+pip install twilio
+pip freeze > requirements.txt

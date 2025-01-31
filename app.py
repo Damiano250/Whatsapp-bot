@@ -19,6 +19,7 @@ def webhook():
         # Chiamata all'API OpenAI per generare una risposta
         response = openai.ChatCompletion.create(
             model="gpt-4o",
+            store= True
             messages=[{"role": "user", "content": incoming_msg}]
         )
 

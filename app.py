@@ -16,9 +16,9 @@ def webhook():
 
     # Chiamata all'API di OpenAI per generare una risposta
     response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": incoming_msg}]
-    )
+    model="gpt-4o",
+    messages=[{"role": "user", "content": incoming_msg}]
+)
 
     # Estrai la risposta di OpenAI
     reply = response["choices"][0]["message"]["content"].strip()

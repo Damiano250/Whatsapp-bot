@@ -18,7 +18,7 @@ def webhook():
     try:
         # Chiamata all'API OpenAI per generare una risposta
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-Turbo",
+            model="gpt-4o",
             messages=[{"role": "user", "content": incoming_msg}]
         )
 
